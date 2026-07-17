@@ -11,8 +11,9 @@ import com.appiancorp.ps.automatedtest.fixture.SitesFixture;
 
 public class AddIsaacSandboxTestRuleTest {
 
-  private static final String TEST_SITE_URL = "https://ignytedemo.appiancloud.com";
-  private static final String TEST_USERNAME = "fitnesse.testuser";
+  private static final String TEST_SITE_URL = "https://ignytedemo.appiancloud.com/suite";
+  private static final String IADC_SITE_URL = "ignyte-appian-developer-copilo";
+  private static final String TEST_USERNAME = "automated.tester";
   private static final String TEST_BROWSER = "CHROME";
   private static final String TEST_SITE_VERSION = "24.3";
   private static final String TEST_SITE_LOCALE = "en_US";
@@ -44,6 +45,7 @@ public class AddIsaacSandboxTestRuleTest {
     fixture.setAppianVersionTo(TEST_SITE_VERSION);
     fixture.setAppianLocaleTo(TEST_SITE_LOCALE);
     fixture.loginWithUsername(TEST_USERNAME);
+    fixture.navigateToSite(IADC_SITE_URL);
   }
 
   @AfterAll
