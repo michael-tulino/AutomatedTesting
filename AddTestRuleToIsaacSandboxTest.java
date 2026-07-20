@@ -1,4 +1,4 @@
-package TestPhase1;
+package TestPhase2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,7 +94,27 @@ public class AddTestRuleToIsaacSandboxTest {
     assertEquals(TEST_TYPE, fixture.getGridColumnRowValue(RULES_GRID, "Operator", foundRow));
     assertEquals(TEST_VALUE, fixture.getGridColumnRowValue(RULES_GRID, "Operand", foundRow));
 
-    fixture.clickOnRecordActionFieldMenuAction(foundRow, "Deactivate Test");
+    int cleanupTotalCount = fixture.getGridTotalCount(RULES_GRID);
+    int cleanupRowsScanned = 0;
+    String cleanupRow = null;
+    fixture.clickOnGridNavigation(RULES_GRID, "first");
+    while (cleanupRow == null && cleanupRowsScanned < cleanupTotalCount) {
+      int rowCount = fixture.getGridRowCount(RULES_GRID);
+      for (int row = 1; row <= rowCount; row++) {
+        String rowIndex = "[" + row + "]";
+        if (RULE_NAME.equals(fixture.getGridColumnRowValue(RULES_GRID, "Name", rowIndex))) {
+          cleanupRow = rowIndex;
+          break;
+        }
+      }
+      cleanupRowsScanned += rowCount;
+      if (cleanupRow == null && cleanupRowsScanned < cleanupTotalCount) {
+        fixture.clickOnGridNavigation(RULES_GRID, "next");
+      }
+    }
+    assertTrue(cleanupRow != null,
+        "Saved rule '" + RULE_NAME + "' could not be re-located for cleanup in the rules list for " + APPLICATION_NAME);
+    fixture.clickOnRecordActionFieldMenuAction(cleanupRow, "Deactivate Test");
   }
 
   @Test
@@ -132,6 +152,27 @@ public class AddTestRuleToIsaacSandboxTest {
 
     assertEquals(PENDING_REVIEW_STATUS, fixture.getGridColumnRowValue(RULES_GRID, "Status", foundRow));
 
-    fixture.clickOnRecordActionFieldMenuAction(foundRow, "Deactivate Test");
+    int cleanupTotalCount = fixture.getGridTotalCount(RULES_GRID);
+    int cleanupRowsScanned = 0;
+    String cleanupRow = null;
+    fixture.clickOnGridNavigation(RULES_GRID, "first");
+    while (cleanupRow == null && cleanupRowsScanned < cleanupTotalCount) {
+      int rowCount = fixture.getGridRowCount(RULES_GRID);
+      for (int row = 1; row <= rowCount; row++) {
+        String rowIndex = "[" + row + "]";
+        if (CONNECTED_SYSTEM_RULE_NAME.equals(fixture.getGridColumnRowValue(RULES_GRID, "Name", rowIndex))) {
+          cleanupRow = rowIndex;
+          break;
+        }
+      }
+      cleanupRowsScanned += rowCount;
+      if (cleanupRow == null && cleanupRowsScanned < cleanupTotalCount) {
+        fixture.clickOnGridNavigation(RULES_GRID, "next");
+      }
+    }
+    assertTrue(cleanupRow != null,
+        "Saved rule '" + CONNECTED_SYSTEM_RULE_NAME + "' could not be re-located for cleanup in the rules list for "
+            + APPLICATION_NAME);
+    fixture.clickOnRecordActionFieldMenuAction(cleanupRow, "Deactivate Test");
   }
 }
