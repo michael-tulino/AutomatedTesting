@@ -26,7 +26,12 @@ public class AddTestRuleToIsaacSandboxTest {
   private static final String OBJECT_ATTRIBUTE = "Unit Test Count";
   private static final String TEST_TYPE = "> (Greater Than)";
   private static final String TEST_VALUE = "0";
-  private static final String RULE_DESCRIPTION = "Expression Rules Have 1+ Automated Tests";
+
+  private static final String CONNECTED_SYSTEM_RULE_NAME = "Connected Systems Have a Name";
+  private static final String CONNECTED_SYSTEM_OBJECT_TYPE = "Connected System";
+  private static final String CONNECTED_SYSTEM_OBJECT_ATTRIBUTE = "Name";
+  private static final String CONNECTED_SYSTEM_TEST_TYPE = "Not Empty";
+  private static final String PENDING_REVIEW_STATUS = "Pending Review";
 
   private static SitesFixture fixture;
 
@@ -59,7 +64,8 @@ public class AddTestRuleToIsaacSandboxTest {
     fixture.populateFieldWith("Object Attribute", new String[] { OBJECT_ATTRIBUTE });
     fixture.populateFieldWith("Test Type", new String[] { TEST_TYPE });
     fixture.populateFieldWith("Test Value", new String[] { TEST_VALUE });
-    fixture.populateFieldWith("Description", new String[] { RULE_DESCRIPTION });
+    assertTrue(fixture.verifyFieldIsNotPresent("Description"),
+        "Description field should not be available when adding a new rule for " + APPLICATION_NAME);
     fixture.clickOnButton("Submit");
 
     int totalCount = fixture.getGridTotalCount(RULES_GRID);
@@ -88,9 +94,43 @@ public class AddTestRuleToIsaacSandboxTest {
     assertEquals(TEST_TYPE, fixture.getGridColumnRowValue(RULES_GRID, "Operator", foundRow));
     assertEquals(TEST_VALUE, fixture.getGridColumnRowValue(RULES_GRID, "Operand", foundRow));
 
-    fixture.clickOnRecordActionFieldMenuAction(foundRow, "Update Test");
-    assertEquals(RULE_DESCRIPTION, fixture.getFieldValue("Description"));
-    fixture.clickOnButton("Cancel");
+    fixture.clickOnRecordActionFieldMenuAction(foundRow, "Deactivate Test");
+  }
+
+  @Test
+  void addTestRuleWithConnectedSystemObjectTypeSetsStatusToPendingReview() {
+    fixture.navigateToSite(IADC_SITE_URL);
+    fixture.clickOnSitePage("Settings");
+    fixture.clickOnLink(APPLICATION_NAME);
+    fixture.clickOnRecordRelatedAction("Add Rule");
+
+    fixture.populateFieldWith("Name", new String[] { CONNECTED_SYSTEM_RULE_NAME });
+    fixture.populateFieldWith("Object Type", new String[] { CONNECTED_SYSTEM_OBJECT_TYPE });
+    fixture.populateFieldWith("Object Attribute", new String[] { CONNECTED_SYSTEM_OBJECT_ATTRIBUTE });
+    fixture.populateFieldWith("Test Type", new String[] { CONNECTED_SYSTEM_TEST_TYPE });
+    fixture.clickOnButton("Submit");
+
+    int totalCount = fixture.getGridTotalCount(RULES_GRID);
+    int rowsScanned = 0;
+    String foundRow = null;
+    while (foundRow == null && rowsScanned < totalCount) {
+      int rowCount = fixture.getGridRowCount(RULES_GRID);
+      for (int row = 1; row <= rowCount; row++) {
+        String rowIndex = "[" + row + "]";
+        if (CONNECTED_SYSTEM_RULE_NAME.equals(fixture.getGridColumnRowValue(RULES_GRID, "Name", rowIndex))) {
+          foundRow = rowIndex;
+          break;
+        }
+      }
+      rowsScanned += rowCount;
+      if (foundRow == null && rowsScanned < totalCount) {
+        fixture.clickOnGridNavigation(RULES_GRID, "next");
+      }
+    }
+    assertTrue(foundRow != null,
+        "Saved rule '" + CONNECTED_SYSTEM_RULE_NAME + "' was not found in the rules list for " + APPLICATION_NAME);
+
+    assertEquals(PENDING_REVIEW_STATUS, fixture.getGridColumnRowValue(RULES_GRID, "Status", foundRow));
 
     fixture.clickOnRecordActionFieldMenuAction(foundRow, "Deactivate Test");
   }
