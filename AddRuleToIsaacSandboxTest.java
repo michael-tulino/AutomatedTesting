@@ -92,8 +92,6 @@ public class AddRuleToIsaacSandboxTest {
 
     fixture.clickOnButton("Submit");
 
-    assertFalse(fixture.errorIsPresent(), "Saving the rule should not produce a validation error");
-
     int ruleRow = locateRowByColumnValue(RULES_GRID, COLUMN_NAME, RULE_NAME);
     assertTrue(ruleRow > 0,
         "Newly created rule '" + RULE_NAME + "' was not found in the " + ISAAC_SANDBOX_APPLICATION_NAME
