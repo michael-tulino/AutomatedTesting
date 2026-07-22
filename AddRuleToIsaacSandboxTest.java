@@ -2,6 +2,7 @@ package autogen;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +23,7 @@ public class AddRuleToIsaacSandboxTest {
   private static final String APPLICATIONS_GRID = "[1]";
   private static final String RULES_GRID = "[1]";
   private static final String COLUMN_NAME = "Name";
+  private static final String COLUMN_STATUS = "Status";
 
   private static final String ISAAC_SANDBOX_APPLICATION_NAME = "Isaac Sandbox";
   private static final String ADD_RULE_ACTION = "Add Rule";
@@ -42,7 +44,12 @@ public class AddRuleToIsaacSandboxTest {
   private static final String RULE_OBJECT_ATTRIBUTE = "Unit Test Count";
   private static final String RULE_TEST_TYPE = "> (Greater Than)";
   private static final String RULE_TEST_VALUE = "0";
-  private static final String RULE_DESCRIPTION = "Expression Rules Have 1+ Automated Tests";
+
+  private static final String PENDING_REVIEW_RULE_NAME = "Connected System Name Is Not Empty";
+  private static final String PENDING_REVIEW_RULE_OBJECT_TYPE = "Connected System";
+  private static final String PENDING_REVIEW_RULE_OBJECT_ATTRIBUTE = "Name";
+  private static final String PENDING_REVIEW_RULE_TEST_TYPE = "Not Empty";
+  private static final String STATUS_PENDING_REVIEW = "Pending Review";
 
   private static SitesFixture fixture;
 
@@ -83,12 +90,14 @@ public class AddRuleToIsaacSandboxTest {
     assertTrue(fixture.verifyFieldContainsValue(FIELD_APPLICATION, RULE_APPLICATION),
         "Application field should default to " + RULE_APPLICATION + " when adding a rule from its summary page");
 
+    assertTrue(fixture.verifyFieldIsNotPresent(FIELD_DESCRIPTION),
+        "Description field should not be present when adding a new rule");
+
     fixture.populateFieldWithValue(FIELD_NAME, RULE_NAME);
     fixture.populateFieldWithValue(FIELD_OBJECT_TYPE, RULE_OBJECT_TYPE);
     fixture.populateFieldWithValue(FIELD_OBJECT_ATTRIBUTE, RULE_OBJECT_ATTRIBUTE);
     fixture.populateFieldWithValue(FIELD_TEST_TYPE, RULE_TEST_TYPE);
     fixture.populateFieldWithValue(FIELD_TEST_VALUE, RULE_TEST_VALUE);
-    fixture.populateFieldWithValue(FIELD_DESCRIPTION, RULE_DESCRIPTION);
 
     fixture.clickOnButton("Submit");
 
@@ -110,12 +119,45 @@ public class AddRuleToIsaacSandboxTest {
         "Saved rule Test Type should be " + RULE_TEST_TYPE);
     assertTrue(fixture.verifyFieldContainsValue(FIELD_TEST_VALUE, RULE_TEST_VALUE),
         "Saved rule Test Value should be " + RULE_TEST_VALUE);
-    assertTrue(fixture.verifyFieldContainsValue(FIELD_DESCRIPTION, RULE_DESCRIPTION),
-        "Saved rule Description should be " + RULE_DESCRIPTION);
 
     fixture.clickOnButton("Cancel");
 
     int cleanupRow = locateRowByColumnValue(RULES_GRID, COLUMN_NAME, RULE_NAME);
+    if (cleanupRow > 0) {
+      fixture.clickOnRecordActionFieldMenuAction("[" + cleanupRow + "]", DEACTIVATE_TEST_ACTION);
+    }
+  }
+
+  @Test
+  void addRuleWithConnectedSystemObjectTypeSetsStatusToPendingReview() {
+    fixture.navigateToSite(IADC_SITE_URL);
+    fixture.clickOnSitePage("Settings");
+
+    int applicationRow = locateRowByColumnValue(APPLICATIONS_GRID, COLUMN_NAME, ISAAC_SANDBOX_APPLICATION_NAME);
+    assertTrue(applicationRow > 0,
+        "'" + ISAAC_SANDBOX_APPLICATION_NAME + "' was not found in the Applications grid");
+
+    fixture.clickOnGridColumnRow(APPLICATIONS_GRID, COLUMN_NAME, "[" + applicationRow + "]");
+    fixture.clickOnRecordRelatedAction(ADD_RULE_ACTION);
+
+    fixture.populateFieldWithValue(FIELD_NAME, PENDING_REVIEW_RULE_NAME);
+    fixture.populateFieldWithValue(FIELD_OBJECT_TYPE, PENDING_REVIEW_RULE_OBJECT_TYPE);
+    fixture.populateFieldWithValue(FIELD_OBJECT_ATTRIBUTE, PENDING_REVIEW_RULE_OBJECT_ATTRIBUTE);
+    fixture.populateFieldWithValue(FIELD_TEST_TYPE, PENDING_REVIEW_RULE_TEST_TYPE);
+
+    fixture.clickOnButton("Submit");
+
+    int ruleRow = locateRowByColumnValue(RULES_GRID, COLUMN_NAME, PENDING_REVIEW_RULE_NAME);
+    assertTrue(ruleRow > 0,
+        "Newly created rule '" + PENDING_REVIEW_RULE_NAME + "' was not found in the "
+            + ISAAC_SANDBOX_APPLICATION_NAME + " Rules grid");
+
+    String statusValue = fixture.getGridColumnRowValue(RULES_GRID, COLUMN_STATUS, "[" + ruleRow + "]");
+    assertEquals(STATUS_PENDING_REVIEW, statusValue,
+        "A rule created with Object Type '" + PENDING_REVIEW_RULE_OBJECT_TYPE + "' should have its Status set to '"
+            + STATUS_PENDING_REVIEW + "'");
+
+    int cleanupRow = locateRowByColumnValue(RULES_GRID, COLUMN_NAME, PENDING_REVIEW_RULE_NAME);
     if (cleanupRow > 0) {
       fixture.clickOnRecordActionFieldMenuAction("[" + cleanupRow + "]", DEACTIVATE_TEST_ACTION);
     }
