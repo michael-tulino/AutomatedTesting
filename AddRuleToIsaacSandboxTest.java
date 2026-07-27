@@ -25,8 +25,8 @@ public class AddRuleToIsaacSandboxTest {
   private static final String RULES_GRID_NAME = "[1]";
   private static final String RULE_NAME_PREFIX = "IV198_";
   private static final String OBJECT_TYPE = "Constant";
-  private static final String OBJECT_ATTRIBUTE = "Value";
-  private static final String TEST_TYPE = "Equals";
+  private static final String OBJECT_ATTRIBUTE = "Name";
+  private static final String TEST_TYPE = "Equal to";
   private static final String TEST_VALUE = "AutomatedTestValue";
   private static final String TEST_DESCRIPTION = "Automated test rule created by the IV-198 Selenium test.";
 
