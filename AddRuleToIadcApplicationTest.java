@@ -15,6 +15,9 @@ import com.appiancorp.ps.automatedtest.fixture.SitesFixture;
 // IV-198: Add a new "Add Rule" action to the IADC Application summary tab that launches a form
 // to create a new Test Rule, with Name/Application/Object Type/Object Attribute/Test
 // Type/Test Value/Description fields and Cancel/Submit buttons.
+// IV-228: Rules involving connected systems require review. Selecting Object Type = Connected
+// System sets a new rule's status to "Pending Review," and the Add Rule form no longer allows
+// entering a Description.
 public class AddRuleToIadcApplicationTest {
   private static final String TEST_SITE_URL = "https://ignytedemo.appiancloud.com/suite";
   private static final String IADC_SITE_URL = "ignyte-appian-developer-copilo";
@@ -32,6 +35,8 @@ public class AddRuleToIadcApplicationTest {
   private static final String OBJECT_TYPE = "Expression Rule";
   private static final String OBJECT_ATTRIBUTE = "Name";
   private static final String TEST_TYPE = "Contains";
+  private static final String CONNECTED_SYSTEM_OBJECT_TYPE = "Connected System";
+  private static final String PENDING_REVIEW_STATUS = "Pending Review";
 
   private static final Logger LOG = LogManager.getLogger(AddRuleToIadcApplicationTest.class);
   private static SitesFixture fixture;
@@ -70,7 +75,7 @@ public class AddRuleToIadcApplicationTest {
 
     navigateToApplicationSummary(APPLICATION_UNDER_TEST);
     fixture.clickOnRecordRelatedAction("Add Rule");
-    populateAddRuleForm(ruleName, testValue);
+    populateAddRuleForm(ruleName, testValue, OBJECT_TYPE);
     fixture.clickOnButton("Submit");
 
     navigateToApplicationSummary(APPLICATION_UNDER_TEST);
@@ -96,13 +101,61 @@ public class AddRuleToIadcApplicationTest {
 
     navigateToApplicationSummary(APPLICATION_UNDER_TEST);
     fixture.clickOnRecordRelatedAction("Add Rule");
-    populateAddRuleForm(ruleName, testValue);
+    populateAddRuleForm(ruleName, testValue, OBJECT_TYPE);
     fixture.clickOnButton("Cancel");
 
     navigateToApplicationSummary(APPLICATION_UNDER_TEST);
     assertFalse(
         findRuleRowByName(ruleName) > 0,
         "Rule [" + ruleName + "] should not be saved to the Rules Grid after clicking Cancel.");
+  }
+
+  // IV-228: Selecting Object Type = Connected System on the Add Rule form must set the new
+  // rule's status to "Pending Review" instead of the default Active status.
+  @Test
+  public void testAddRuleWithConnectedSystemObjectTypeSetsStatusToPendingReview() {
+    String ruleName = RULE_NAME_PREFIX + fixture.getRandomAlphabetString(8);
+    String testValue = fixture.getRandomAlphabetString(10);
+
+    navigateToApplicationSummary(APPLICATION_UNDER_TEST);
+    fixture.clickOnRecordRelatedAction("Add Rule");
+    populateAddRuleForm(ruleName, testValue, CONNECTED_SYSTEM_OBJECT_TYPE);
+    fixture.clickOnButton("Submit");
+
+    navigateToApplicationSummary(APPLICATION_UNDER_TEST);
+    int ruleRow = findRuleRowByName(ruleName);
+    assertTrue(
+        ruleRow > 0,
+        "Rule [" + ruleName + "] should show up in the Rules Grid on the ["
+            + APPLICATION_UNDER_TEST + "] Application Summary after submitting the Add Rule form.");
+
+    String status = fixture.getGridColumnRowValue(RULES_GRID_INDEX, "Status", "[" + ruleRow + "]");
+    assertTrue(
+        PENDING_REVIEW_STATUS.equals(status),
+        "Rule [" + ruleName + "] with Object Type [" + CONNECTED_SYSTEM_OBJECT_TYPE
+            + "] should have a status of [" + PENDING_REVIEW_STATUS + "], but was [" + status
+            + "].");
+
+    // Re-locate the row rather than reusing the index above, in case anything shifted the grid.
+    int cleanupRow = findRuleRowByName(ruleName);
+    if (cleanupRow > 0) {
+      fixture.clickOnRecordActionFieldMenuAction("[" + cleanupRow + "]", "Deactivate Test");
+    } else {
+      fail("Could not re-locate rule [" + ruleName + "] for cleanup after confirming it was present.");
+    }
+  }
+
+  // IV-228: The Add Rule form must no longer allow entering a Description for a new rule.
+  @Test
+  public void testDescriptionFieldIsNotPresentOnAddRuleForm() {
+    navigateToApplicationSummary(APPLICATION_UNDER_TEST);
+    fixture.clickOnRecordRelatedAction("Add Rule");
+
+    assertTrue(
+        fixture.verifyFieldIsNotPresent("Description"),
+        "The [Description] field should not be present on the Add Rule form.");
+
+    fixture.clickOnButton("Cancel");
   }
 
   private void navigateToApplicationSummary(String applicationName) {
@@ -131,14 +184,13 @@ public class AddRuleToIadcApplicationTest {
         + " pages.");
   }
 
-  private void populateAddRuleForm(String ruleName, String testValue) {
+  private void populateAddRuleForm(String ruleName, String testValue, String objectType) {
     populateRequiredField("Name", ruleName);
     populateRequiredField("Application", APPLICATION_UNDER_TEST);
-    populateRequiredField("Object Type", OBJECT_TYPE);
+    populateRequiredField("Object Type", objectType);
     populateRequiredField("Object Attribute", OBJECT_ATTRIBUTE);
     populateRequiredField("Test Type", TEST_TYPE);
     populateOptionalField("Test Value", testValue);
-    populateOptionalField("Description", "Automated test rule " + ruleName);
   }
 
   private void populateRequiredField(String fieldName, String value) {
