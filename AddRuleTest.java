@@ -24,6 +24,7 @@ public class AddRuleTest {
   private static final Integer TEST_TIMEOUT = 60;
 
   private static final String IADC_APPLICATION_RECORD_NAME = "Ignyte Appian Developer Copilot";
+  private static final String APPLICATIONS_GRID_INDEX = "[1]";
   private static final String RULES_GRID_INDEX = "[1]";
   private static final int MAX_PAGES_TO_SCAN = 30;
   private static final int NOT_FOUND = -1;
@@ -148,7 +149,30 @@ public class AddRuleTest {
   private void navigateToApplicationSummary() {
     fixture.navigateToSite(IADC_SITE_URL);
     fixture.clickOnSitePage("Settings");
-    fixture.clickOnRecord(IADC_APPLICATION_RECORD_NAME);
+    locateAndOpenApplicationRecord(IADC_APPLICATION_RECORD_NAME);
+  }
+
+  private void locateAndOpenApplicationRecord(String applicationName) {
+    for (int page = 1; page <= MAX_PAGES_TO_SCAN; page++) {
+      int rowCount = fixture.getGridRowCount(APPLICATIONS_GRID_INDEX);
+      for (int row = 1; row <= rowCount; row++) {
+        String name =
+            fixture.getGridColumnRowValue(APPLICATIONS_GRID_INDEX, "Name", "[" + row + "]");
+        if (applicationName.equals(name)) {
+          fixture.clickOnRecord(applicationName);
+          return;
+        }
+      }
+
+      try {
+        fixture.clickOnGridNavigation(APPLICATIONS_GRID_INDEX, "next");
+      } catch (RuntimeException e) {
+        break;
+      }
+    }
+
+    fail("Did not find application [" + applicationName + "] in the Applications Grid after "
+        + "scanning " + MAX_PAGES_TO_SCAN + " pages.");
   }
 
   private void populateRequiredField(String fieldName, String value) {
